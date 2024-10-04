@@ -1,0 +1,13 @@
+train: ../../card-detect.v11i.yolov11/train/images
+val: ../../card-detect.v11i.yolov11/valid/images
+test: ../../card-detect.v11i.yolov11/test/images
+
+nc: 5
+names: ['jenga', 'cube', 'block', 'red block', 'red cube']
+
+roboflow:
+  workspace: empamos
+  project: card-detect-49zev
+  version: 11
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/empamos/card-detect-49zev/dataset/11
