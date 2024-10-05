@@ -1,7 +1,7 @@
 task: segment
 mode: train
 model: yolo11n-seg.pt
-data: datasets/card-detect.v11i.yolov11/data.yaml
+data: datasets/card-detect/data.yaml
 epochs: 20
 time: null
 patience: 100
