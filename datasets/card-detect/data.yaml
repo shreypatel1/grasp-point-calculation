@@ -1,0 +1,13 @@
+train: ../../card-detect/train/images
+val: ../../card-detect/valid/images
+test: ../../card-detect/test/images
+
+nc: 1
+names: ['jenga']
+
+roboflow:
+  workspace: empamos
+  project: card-detect-49zev
+  version: 11
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/empamos/card-detect-49zev/dataset/11
