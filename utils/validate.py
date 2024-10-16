@@ -2,7 +2,7 @@ from ultralytics import YOLO
 
 # Load a model
 # model = YOLO("yolo11n-seg.pt")  # load an official model
-model = YOLO("../runs/segment/100epochs/weights/best.pt")  # load a custom model
+model = YOLO("runs/segment/300epochs/weights/best.pt")  # load a custom model
 
 # Validate the model
 metrics = model.val()  # no arguments needed, dataset and settings remembered
