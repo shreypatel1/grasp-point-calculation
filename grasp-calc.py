@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 from imutils.video import FPS
 from realsense import RealSenseCamera
+import open3d as o3d
 
 
 # Construct an argument parser and parse the arguments
