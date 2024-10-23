@@ -135,7 +135,6 @@ while True:
 
 
                 if len(depth_frame) > 0:
-                    continue
                     # Display the isolated color frame
                     cv2.namedWindow("Isolated Color Frame", cv2.WINDOW_AUTOSIZE)
                     cv2.imshow("Isolated Color Frame", isolated_color_frame)
