@@ -37,3 +37,6 @@ class RealSenseCamera:
 
     def stop(self):
         self.pipeline.stop()
+
+    def get_intrinsics(self):
+        return self.pipeline.get_active_profile().get_stream(rs.stream.color).as_video_stream_profile().get_intrinsics()
