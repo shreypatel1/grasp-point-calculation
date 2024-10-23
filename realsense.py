@@ -1,5 +1,6 @@
 import pyrealsense2 as rs
 import numpy as np
+import json
 
 
 class RealSenseCamera:
@@ -7,6 +8,10 @@ class RealSenseCamera:
         # Configure depth and color streams
         self.pipeline = rs.pipeline()
         config = rs.config()
+
+        json_file = "rs_depth_config2.json"
+        with open(json_file, "r") as f:
+            depth_config = json.load(f)
 
         pipeline_wrapper = rs.pipeline_wrapper(self.pipeline)
         pipeline_profile = config.resolve(pipeline_wrapper)
@@ -18,6 +23,12 @@ class RealSenseCamera:
 
         # Start streaming
         self.pipeline.start(config)
+
+        advanced_mode = rs.rs400_advanced_mode(device)
+        if not advanced_mode.is_enabled():
+            print("Device is not in advanced mode, enabling...")
+            advanced_mode.toggle_advanced_mode(True)
+        advanced_mode.load_json(json.dumps(depth_config))
 
     def get_frames(self):
         # Wait for frames from the Realsense Camera
