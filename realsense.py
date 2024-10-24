@@ -49,5 +49,13 @@ class RealSenseCamera:
     def stop(self):
         self.pipeline.stop()
 
-    def get_intrinsics(self):
+    def get_color_intrinsics(self):
         return self.pipeline.get_active_profile().get_stream(rs.stream.color).as_video_stream_profile().get_intrinsics()
+
+    def get_depth_intrinsics(self):
+        depth_sensor = self.pipeline.get_active_profile().get_device().first_depth_sensor()
+        depth_scale = depth_sensor.get_depth_scale()
+        return self.pipeline.get_active_profile().get_stream(rs.stream.depth).as_video_stream_profile().get_intrinsics(), depth_scale
+
+    def get_extrinsics(self):
+        return self.pipeline.get_active_profile().get_stream(rs.stream.depth).as_video_stream_profile().get_extrinsics_to(self.pipeline.get_active_profile().get_stream(rs.stream.color))

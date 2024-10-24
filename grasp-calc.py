@@ -1,4 +1,5 @@
 import argparse
+
 from ultralytics import YOLO
 import cv2
 import numpy as np
@@ -31,11 +32,22 @@ x_scale = 1280 / 640
 y_scale = 720 / 384
 
 
-intrinsic = rs_cam.get_intrinsics()
+color_intrinsics = rs_cam.get_color_intrinsics()
 # [ 1280x720  p[654.9 363.624]  f[643.633 643.024]  Inverse Brown Conrady [-0.0544022 0.0635166 -0.000826826 0.000847402 -0.0205106] ]
-fx, fy = intrinsic.fx, intrinsic.fy
-cx, cy = intrinsic.ppx, intrinsic.ppy
-k1, k2, p1, p2, k3 = intrinsic.coeffs
+fx, fy = color_intrinsics.fx, color_intrinsics.fy
+cx, cy = color_intrinsics.ppx, color_intrinsics.ppy
+k1, k2, p1, p2, k3 = color_intrinsics.coeffs
+
+depth_intrinsics, depth_scale = rs_cam.get_depth_intrinsics()
+extrinsics = rs_cam.get_extrinsics()
+tx, ty, tz = extrinsics.translation
+px_offset = int((tx * fx))
+py_offset = int((ty * fy))
+print(f"px_offset: {px_offset}, py_offset: {py_offset}")
+
+print(f"Color Intrinsics: {color_intrinsics}")
+print(f"Depth Intrinsics: {depth_intrinsics}")
+print(f"Extrinsics: {extrinsics}")
 
 # Camera matrix
 camera_matrix = np.array([[fx, 0, cx],
@@ -81,11 +93,12 @@ while True:
 
                 # Get the bounding box of the object for isolating the depth frame
                 bbox = r.boxes.data[idx].cpu().numpy()
-                x1, y1, x2, y2, _, _ = bbox.astype(np.uint32)
+                x1, y1, x2, y2, _, _ = bbox.astype(np.int32)
                 # x1, y1, x2, y2 = int(x1 * x_scale), int(y1 * y_scale), int(x2 * x_scale), int(y2 * y_scale)
                 isolated_color_frame = isolated_color_frame[y1:y2, x1:x2]
                 mask_binary = mask_binary[y1:y2, x1:x2]
-                isolated_depth_frame = depth_frame[y1:y2, x1:x2]
+                isolated_depth_frame = depth_frame[(y1-py_offset):(y2-py_offset), (x1-px_offset):(x2-px_offset)]
+                # print(f"Cropped frame size: {len(isolated_color_frame[0])} x {len(isolated_color_frame)}")
 
                 points = []
 
@@ -101,7 +114,7 @@ while True:
                         points.append([X, Y, Z])
                         distance_data.append([x, y, isolated_depth_frame[y, x]])
                 distance_data = np.array(distance_data)
-                print(f"Distance Data: {distance_data}")
+                # print(f"Distance Data: {distance_data}")
 
                 points = np.array(points)
 
