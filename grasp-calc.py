@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 from imutils.video import FPS
 from realsense import RealSenseCamera
+import pyrealsense2 as rs
 import open3d as o3d
 
 
@@ -23,6 +24,8 @@ fps = FPS().start()
 
 # Initialize the RealSense camera
 rs_cam = RealSenseCamera()
+
+pc = rs.pointcloud()
 
 x_scale = 1280 / 640
 y_scale = 720 / 384
@@ -54,7 +57,6 @@ while True:
     # Undistort the frames
     color_frame = cv2.undistort(color_frame, camera_matrix, dist_coeffs)
     depth_frame = cv2.undistort(depth_frame, camera_matrix, dist_coeffs)
-    cv2.imshow("Depth Frame", depth_frame)
 
     # Run the YOLO model on the frame
     results = model(color_frame, conf=args.conf, stream=True)
@@ -91,20 +93,23 @@ while True:
                 nonzero = np.argwhere(mask_binary)
                 distance_data = []
                 for y, x in nonzero:
-                    Z = isolated_depth_frame[y, x]
-                    if Z > 0:
-                        X = ((x - cx) * Z) / fx
-                        Y = ((y - cy) * Z) / fy
+                    dist = isolated_depth_frame[y, x] / 1000
+                    if dist > 0:
+                        X = ((x1 + x - cx) * dist) / fx
+                        Y = ((y1 + y - cy) * dist) / fy
+                        Z = np.sqrt(dist ** 2 - X ** 2 - Y ** 2)
                         points.append([X, Y, Z])
                         distance_data.append([x, y, isolated_depth_frame[y, x]])
                 distance_data = np.array(distance_data)
+                print(f"Distance Data: {distance_data}")
+
+                points = np.array(points)
 
                 # Create an Open3D point cloud object
-
                 point_cloud = o3d.geometry.PointCloud()
 
                 if len(points) > 0:
-                    point_cloud.points = o3d.utility.Vector3dVector(np.array(points))
+                    point_cloud.points = o3d.utility.Vector3dVector(points)
                     vis = o3d.visualization.Visualizer()
                     vis.create_window()
                     vis.add_geometry(point_cloud)
