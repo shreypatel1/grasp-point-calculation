@@ -1,5 +1,6 @@
 import argparse
 
+from jedi.api.refactoring import inline
 from ultralytics import YOLO
 import cv2
 import numpy as np
@@ -7,6 +8,7 @@ from imutils.video import FPS
 from realsense import RealSenseCamera
 import pyrealsense2 as rs
 import open3d as o3d
+import pyransac3d as pyrsc
 
 
 # Construct an argument parser and parse the arguments
@@ -118,16 +120,65 @@ while True:
 
                 points = np.array(points)
 
+                distance_threshold = 0.02
+                ransac_n = 3  # Minimum number of points to fit a cylinder model
+                num_iterations = 1000  # Number of RANSAC iterations
+
                 # Create an Open3D point cloud object
                 point_cloud = o3d.geometry.PointCloud()
 
                 if len(points) > 0:
                     point_cloud.points = o3d.utility.Vector3dVector(points)
-                    vis = o3d.visualization.Visualizer()
-                    vis.create_window()
-                    vis.add_geometry(point_cloud)
-                    vis.run()
-                    vis.destroy_window()
+                    point_cloud, ind = point_cloud.remove_statistical_outlier(nb_neighbors=20, std_ratio=2.0)
+                    # get the updated set of points as a numpy array
+                    points = np.asarray(point_cloud.points)
+
+                    cylinder1 = pyrsc.Cylinder()
+                    ctr, axs, r, inliners = cylinder1.fit(points, distance_threshold, num_iterations)
+                    print(f"Center: {ctr}")
+                    print(f"Axis: {axs}")
+                    print(f"Radius: {r}")
+                    print(f"Number of inliners: {len(inliners)}")
+
+                    # Convert cylinder axis values to xyz rotation angles
+                    x, y, z = axs
+                    theta = np.arctan2(y, x)
+                    phi = np.arccos(z / np.linalg.norm(axs))
+                    print(f"Theta: {theta}, Phi: {phi}")
+
+                    # Returns:
+                    #
+                    # center: Center of the cylinder np.array(1, 3) which the cylinder axis is passing through.
+                    # axis: Vector describing cylinder 's axis np.array(1,3).
+                    # radius: Radius of cylinder.
+                    # inliers: Inlier's index from the original point cloud.
+
+                    # Create a cylinder object
+                    cylinder_object = o3d.geometry.TriangleMesh.create_cylinder(radius=r, height=0.1)
+                    cylinder_object.compute_vertex_normals()
+                    cylinder_object.paint_uniform_color([0.1, 0.1, 0.7])
+
+                    # Rotate the cylinder to align with the axis of the cylinder
+                    cylinder_object.rotate(o3d.geometry.get_rotation_matrix_from_xyz((theta, phi, 0)), center=ctr)
+
+                    # Translate the cylinder to the center of the cylinder
+                    cylinder_object.translate(ctr)
+
+                    # # Create a line set to represent the axis of the cylinder
+                    # line_set = o3d.geometry.LineSet()
+                    # points = np.array([[0, 0, 0], axs])
+                    # lines = [[0, 1]]
+                    # line_set.points = o3d.utility.Vector3dVector(points)
+                    # line_set.lines = o3d.utility.Vector2iVector(lines)
+
+                    # Display everything
+                    o3d.visualization.draw_geometries([point_cloud, cylinder_object])
+
+                    # vis = o3d.visualization.Visualizer()
+                    # vis.create_window()
+                    # vis.add_geometry(point_cloud)
+                    # vis.run()
+                    # vis.destroy_window()
 
 
                 print(f"Total points extracted: {len(points)}")

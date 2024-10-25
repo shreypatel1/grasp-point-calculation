@@ -50,14 +50,14 @@ while True:
 
 
     # Create an Open3D point cloud object
-    point_cloud = o3d.geometry.PointCloud()
-    if len(vertices) > 0:
-        point_cloud.points = o3d.utility.Vector3dVector(vertices)
-        vis = o3d.visualization.Visualizer()
-        vis.create_window()
-        vis.add_geometry(point_cloud)
-        vis.run()
-        vis.destroy_window()
+    # point_cloud = o3d.geometry.PointCloud()
+    # if len(vertices) > 0:
+    #     point_cloud.points = o3d.utility.Vector3dVector(vertices)
+    #     vis = o3d.visualization.Visualizer()
+    #     vis.create_window()
+    #     vis.add_geometry(point_cloud)
+    #     vis.run()
+    #     vis.destroy_window()
 
     # Convert images to numpy arrays
     color_frame = np.asanyarray(color_frame.get_data())
