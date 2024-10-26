@@ -1,8 +1,8 @@
-import pyrealsense2 as rs
-import numpy as np
-import cv2
 import json
-import open3d as o3d
+
+import cv2
+import numpy as np
+import pyrealsense2 as rs
 
 pc = rs.pointcloud()
 

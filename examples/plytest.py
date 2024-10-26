@@ -1,6 +1,5 @@
 import open3d as o3d
 import numpy as np
-from scipy.constants import point
 
 # Load the PLY file
 ply_file_path = "examples/1.ply"

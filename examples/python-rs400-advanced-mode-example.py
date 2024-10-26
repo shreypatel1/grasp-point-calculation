@@ -1,8 +1,8 @@
-## License: Apache 2.0. See LICENSE file in root directory.
-## Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+# License: Apache 2.0. See LICENSE file in root directory.
+# Copyright(c) 2017 Intel Corporation. All Rights Reserved.
 
 #####################################################
-##          rs400 advanced mode tutorial           ##
+#          rs400 advanced mode tutorial           ##
 #####################################################
 
 # First import the library
@@ -10,18 +10,21 @@ import pyrealsense2 as rs
 import time
 import json
 
-DS5_product_ids = ["0AD1", "0AD2", "0AD3", "0AD4", "0AD5", "0AF6", "0AFE", "0AFF", "0B00", "0B01", "0B03", "0B07", "0B3A", "0B5C", "0B5B"]
+DS5_product_ids = ["0AD1", "0AD2", "0AD3", "0AD4", "0AD5", "0AF6", "0AFE", "0AFF", "0B00", "0B01", "0B03", "0B07",
+                   "0B3A", "0B5C", "0B5B"]
 
-def find_device_that_supports_advanced_mode() :
+
+def find_device_that_supports_advanced_mode():
     ctx = rs.context()
     ds5_dev = rs.device()
-    devices = ctx.query_devices();
+    devices = ctx.query_devices()
     for dev in devices:
         if dev.supports(rs.camera_info.product_id) and str(dev.get_info(rs.camera_info.product_id)) in DS5_product_ids:
             if dev.supports(rs.camera_info.name):
                 print("Found device that supports advanced mode:", dev.get_info(rs.camera_info.name))
             return dev
     raise Exception("No D400 product line device that supports advanced mode was found")
+
 
 try:
     dev = find_device_that_supports_advanced_mode()
@@ -54,7 +57,7 @@ try:
     print("Auto Exposure Control: \n", advnc_mode.get_ae_control())
     print("Census: \n", advnc_mode.get_census())
 
-    #To get the minimum and maximum value of each control use the mode value:
+    # To get the minimum and maximum value of each control use the mode value:
     query_min_values_mode = 1
     query_max_values_mode = 2
     current_std_depth_control_group = advnc_mode.get_depth_control()
@@ -64,7 +67,8 @@ try:
     print("Depth Control Max Values: \n ", max_std_depth_control_group)
 
     # Set some control with a new (median) value
-    current_std_depth_control_group.scoreThreshA = int((max_std_depth_control_group.scoreThreshA - min_std_depth_control_group.scoreThreshA) / 2)
+    current_std_depth_control_group.scoreThreshA = int(
+        (max_std_depth_control_group.scoreThreshA - min_std_depth_control_group.scoreThreshA) / 2)
     advnc_mode.set_depth_control(current_std_depth_control_group)
     print("After Setting new value, Depth Control: \n", advnc_mode.get_depth_control())
 

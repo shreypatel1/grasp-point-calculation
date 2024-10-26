@@ -1,5 +1,6 @@
 import os
 
+
 def process_file(filepath):
     # Open the file and read all lines
     with open(filepath, 'r') as file:
@@ -19,6 +20,7 @@ def process_file(filepath):
     with open(filepath, 'w') as file:
         file.writelines(modified_lines)
 
+
 def process_directory(directory):
     # Loop through all files in the directory
     for filename in os.listdir(directory):
@@ -27,6 +29,7 @@ def process_directory(directory):
             process_file(filepath)
             print(f"Processed {filename}")
 
+
 # Specify the directory you want to process
-directory = "datasets/jenga-piece-detection.v1i.yolo11/valid/labels"  # Replace with your directory path
-process_directory(directory)
+direc = "datasets/jenga-piece-detection.v1i.yolo11/valid/labels"  # Replace with your directory path
+process_directory(direc)

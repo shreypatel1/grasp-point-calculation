@@ -63,8 +63,6 @@ while True:
     if not has_frames:
         break
 
-    # cv2.imshow("Depth Frame", depth_frame)
-
     # Undistort the frames
     color_frame = cv2.undistort(color_frame, camera_matrix, dist_coeffs)
     depth_frame = cv2.undistort(depth_frame, camera_matrix, dist_coeffs)
@@ -147,12 +145,6 @@ while True:
                     print(f"Axis: {axs}")
                     print(f"Radius: {r}")
                     print(f"Number of inliners: {len(inliners)}")
-
-                    # Convert cylinder axis values to xyz rotation angles
-                    # x, y, z = axs
-                    # theta = np.arctan2(y, x)
-                    # phi = np.arccos(z / np.linalg.norm(axs))
-                    # print(f"Theta: {theta}, Phi: {phi}")
 
                     # # Returns:
                     # # center: Center of the cylinder np.array(1, 3) which the cylinder axis is passing through.
