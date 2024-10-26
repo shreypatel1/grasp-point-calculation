@@ -9,11 +9,11 @@ import pyrealsense2 as rs
 import open3d as o3d
 import pyransac3d as pyrsc
 
-
 # Construct an argument parser and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("--source", "-s", type=int, default=0, help="camera source")
-ap.add_argument("--weights", "-w", type=str, default="runs/segment/300epochs/weights/best.pt", help="YOLO segmentation model weights")
+ap.add_argument("--weights", "-w", type=str, default="runs/segment/300epochs/weights/best.pt",
+                help="YOLO segmentation model weights")
 ap.add_argument("--conf", "-c", type=float, default=0.90, help="confidence threshold")
 args = ap.parse_args()
 
@@ -31,7 +31,6 @@ pc = rs.pointcloud()
 
 x_scale = 1280 / 640
 y_scale = 720 / 384
-
 
 color_intrinsics = rs_cam.get_color_intrinsics()
 # [ 1280x720  p[654.9 363.624]  f[643.633 643.024]  Inverse Brown Conrady [-0.0544022 0.0635166 -0.000826826 0.000847402 -0.0205106] ]
@@ -52,12 +51,11 @@ print(f"px_offset: {px_offset}, py_offset: {py_offset}")
 
 # Camera matrix
 camera_matrix = np.array([[fx, 0, cx],
-                           [0, fy, cy],
-                           [0, 0, 1]], dtype=np.float32)
+                          [0, fy, cy],
+                          [0, 0, 1]], dtype=np.float32)
 
 # Distortion coefficients
 dist_coeffs = np.array([k1, k2, p1, p2, k3], dtype=np.float32)
-
 
 # Loop over the frames from the video stream
 while True:
@@ -74,7 +72,7 @@ while True:
     # Run the YOLO model on the frame
     results = model(color_frame, conf=args.conf, stream=True)
 
-    for r in results: # results is a generator
+    for r in results:  # results is a generator
         if r.masks is None or len(r.masks.data) == 0:
             break
         for idx, mask in enumerate(r.masks.data):
@@ -98,7 +96,7 @@ while True:
                 # x1, y1, x2, y2 = int(x1 * x_scale), int(y1 * y_scale), int(x2 * x_scale), int(y2 * y_scale)
                 isolated_color_frame = isolated_color_frame[y1:y2, x1:x2]
                 mask_binary = mask_binary[y1:y2, x1:x2]
-                isolated_depth_frame = depth_frame[(y1-py_offset):(y2-py_offset), (x1-px_offset):(x2-px_offset)]
+                isolated_depth_frame = depth_frame[(y1 - py_offset):(y2 - py_offset), (x1 - px_offset):(x2 - px_offset)]
                 # print(f"Cropped frame size: {len(isolated_color_frame[0])} x {len(isolated_color_frame)}")
 
                 points = []
@@ -128,7 +126,8 @@ while True:
 
                 if len(points) > 0:
                     point_cloud.points = o3d.utility.Vector3dVector(points)
-                    point_cloud, ind = point_cloud.remove_statistical_outlier(nb_neighbors=60, std_ratio=3.0, print_progress=True)
+                    point_cloud, ind = point_cloud.remove_statistical_outlier(nb_neighbors=60, std_ratio=3.0,
+                                                                              print_progress=True)
                     # get the updated set of points as a numpy array
                     points = np.asarray(point_cloud.points)
 
@@ -183,13 +182,11 @@ while True:
                     # vis.run()
                     # vis.destroy_window()
 
-
                 print(f"Total points extracted: {len(points)}")
                 if len(points) > 0:
                     print(f"Sample points: {points[:5]}")  # Print the first 5 points
                 else:
                     print("No valid points extracted.")
-
 
                 if len(depth_frame) > 0:
                     # Display the isolated color frame
