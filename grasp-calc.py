@@ -1,6 +1,5 @@
 import argparse
 
-from jedi.api.refactoring import inline
 from ultralytics import YOLO
 import cv2
 import numpy as np
@@ -43,13 +42,13 @@ k1, k2, p1, p2, k3 = color_intrinsics.coeffs
 depth_intrinsics, depth_scale = rs_cam.get_depth_intrinsics()
 extrinsics = rs_cam.get_extrinsics()
 tx, ty, tz = extrinsics.translation
-px_offset = int((tx * fx))
-py_offset = int((ty * fy))
+px_offset = int((tx * fx)) - 4
+py_offset = int((ty * fy)) + 7
 print(f"px_offset: {px_offset}, py_offset: {py_offset}")
 
-print(f"Color Intrinsics: {color_intrinsics}")
-print(f"Depth Intrinsics: {depth_intrinsics}")
-print(f"Extrinsics: {extrinsics}")
+# print(f"Color Intrinsics: {color_intrinsics}")
+# print(f"Depth Intrinsics: {depth_intrinsics}")
+# print(f"Extrinsics: {extrinsics}")
 
 # Camera matrix
 camera_matrix = np.array([[fx, 0, cx],
@@ -86,9 +85,9 @@ while True:
                 mask_binary = (mask > 0).astype(np.uint8)
                 # convert mask binary to the same size as the depth and color frames
                 mask_binary = cv2.resize(mask_binary, (1280, 720))
-                print(f"Mask Binary size: {len(mask_binary[0])} x {len(mask_binary)}")
-                print(f"Depth Frame size: {len(depth_frame[0])} x {len(depth_frame)}")
-                print(f"Color Frame size: {len(color_frame[0])} x {len(color_frame)}")
+                # print(f"Mask Binary size: {len(mask_binary[0])} x {len(mask_binary)}")
+                # print(f"Depth Frame size: {len(depth_frame[0])} x {len(depth_frame)}")
+                # print(f"Color Frame size: {len(color_frame[0])} x {len(color_frame)}")
 
                 # Apply the mask to the color frame and isolate the object
                 isolated_color_frame = cv2.bitwise_and(color_frame, color_frame, mask=mask_binary)
@@ -121,7 +120,7 @@ while True:
                 points = np.array(points)
 
                 distance_threshold = 0.02
-                ransac_n = 3  # Minimum number of points to fit a cylinder model
+                ransac_n = 500  # Minimum number of points to fit a cylinder model
                 num_iterations = 1000  # Number of RANSAC iterations
 
                 # Create an Open3D point cloud object
@@ -129,50 +128,54 @@ while True:
 
                 if len(points) > 0:
                     point_cloud.points = o3d.utility.Vector3dVector(points)
-                    point_cloud, ind = point_cloud.remove_statistical_outlier(nb_neighbors=30, std_ratio=2.0)
+                    point_cloud, ind = point_cloud.remove_statistical_outlier(nb_neighbors=60, std_ratio=3.0, print_progress=True)
                     # get the updated set of points as a numpy array
                     points = np.asarray(point_cloud.points)
 
+                    # mesh_cylinder = o3d.geometry.TriangleMesh.create_cylinder(radius=0.02, height=0.15)
+                    # mesh_cylinder.compute_vertex_normals()
+                    # mesh_cylinder.paint_uniform_color([0.1, 0.9, 0.1])
+                    # o3d.visualization.draw_geometries([mesh_cylinder])
+                    # pcd_load = mesh_cylinder.sample_points_uniformly(number_of_points=2000)
+                    # o3d.visualization.draw_geometries([pcd_load])
+
                     cylinder1 = pyrsc.Cylinder()
                     ctr, axs, r, inliners = cylinder1.fit(points, distance_threshold, num_iterations)
+                    ctr = np.float32(ctr)
+                    axs = np.float32(axs)
+                    r = np.float32(r)
                     print(f"Center: {ctr}")
                     print(f"Axis: {axs}")
                     print(f"Radius: {r}")
                     print(f"Number of inliners: {len(inliners)}")
-                    #
-                    # # Convert cylinder axis values to xyz rotation angles
+
+                    # Convert cylinder axis values to xyz rotation angles
                     # x, y, z = axs
                     # theta = np.arctan2(y, x)
                     # phi = np.arccos(z / np.linalg.norm(axs))
                     # print(f"Theta: {theta}, Phi: {phi}")
-                    #
+
                     # # Returns:
-                    # #
                     # # center: Center of the cylinder np.array(1, 3) which the cylinder axis is passing through.
                     # # axis: Vector describing cylinder 's axis np.array(1,3).
                     # # radius: Radius of cylinder.
                     # # inliers: Inlier's index from the original point cloud.
-                    #
-                    # # Create a cylinder object
-                    # cylinder_object = o3d.geometry.TriangleMesh.create_cylinder(radius=r, height=0.1)
-                    # cylinder_object.compute_vertex_normals()
-                    # cylinder_object.paint_uniform_color([0.1, 0.1, 0.7])
-                    #
-                    # # Rotate the cylinder to align with the axis of the cylinder
-                    # cylinder_object.rotate(o3d.geometry.get_rotation_matrix_from_xyz((theta, phi, 0)), center=ctr)
-                    #
-                    # # Translate the cylinder to the center of the cylinder
-                    # cylinder_object.translate(ctr)
 
-                    # # Create a line set to represent the axis of the cylinder
-                    # line_set = o3d.geometry.LineSet()
-                    # points = np.array([[0, 0, 0], axs])
-                    # lines = [[0, 1]]
-                    # line_set.points = o3d.utility.Vector3dVector(points)
-                    # line_set.lines = o3d.utility.Vector2iVector(lines)
+                    # Create a cylinder object
+                    cylinder_mesh = o3d.geometry.TriangleMesh.create_cylinder(radius=r, height=0.1)
+                    cylinder_mesh.compute_vertex_normals()
+                    # cylinder_object.paint_uniform_color([0.1, 0.1, 0.7])
+                    print(cylinder_mesh)
+
+                    # Translate the cylinder to the center of the cylinder
+                    print(o3d.geometry.TriangleMesh.translate(cylinder_mesh, [ctr[0], ctr[1], ctr[2]]))
+                    # cylinder_mesh.translate([ctr[0], 0, 0])
+
+                    # Rotate the cylinder to align with the axis of the cylinder
+                    # cylinder_object.rotate(o3d.geometry.get_rotation_matrix_from_xyz(axs), center=ctr)
 
                     # Display everything
-                    o3d.visualization.draw_geometries([point_cloud])
+                    o3d.visualization.draw_geometries([point_cloud, cylinder_mesh])
 
                     # vis = o3d.visualization.Visualizer()
                     # vis.create_window()
