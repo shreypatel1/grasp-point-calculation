@@ -9,7 +9,7 @@ class RealSenseCamera:
         self.pipeline = rs.pipeline()
         config = rs.config()
 
-        json_file = "rs_depth_config2.json"
+        json_file = "config/rs_depth_config2.json"
         with open(json_file, "r") as f:
             depth_config = json.load(f)
 

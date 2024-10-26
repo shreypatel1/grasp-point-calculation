@@ -11,7 +11,6 @@ import pyransac3d as pyrsc
 
 # Construct an argument parser and parse the arguments
 ap = argparse.ArgumentParser()
-ap.add_argument("--source", "-s", type=int, default=0, help="camera source")
 ap.add_argument("--weights", "-w", type=str, default="runs/segment/300epochs/weights/best.pt",
                 help="YOLO segmentation model weights")
 ap.add_argument("--conf", "-c", type=float, default=0.90, help="confidence threshold")
@@ -91,7 +90,6 @@ while True:
                 # Get the bounding box of the object for isolating the depth frame
                 bbox = r.boxes.data[idx].cpu().numpy()
                 x1, y1, x2, y2, _, _ = bbox.astype(np.int32)
-                # x1, y1, x2, y2 = int(x1 * x_scale), int(y1 * y_scale), int(x2 * x_scale), int(y2 * y_scale)
                 isolated_color_frame = isolated_color_frame[y1:y2, x1:x2]
                 mask_binary = mask_binary[y1:y2, x1:x2]
                 isolated_depth_frame = depth_frame[(y1 - py_offset):(y2 - py_offset), (x1 - px_offset):(x2 - px_offset)]
@@ -101,7 +99,6 @@ while True:
 
                 # Find the non-zero pixels in the mask binary and convert them to an array of (x, y) coordinates
                 nonzero = np.argwhere(mask_binary)
-                distance_data = []
                 for y, x in nonzero:
                     dist = isolated_depth_frame[y, x] / 1000
                     if dist > 0:
@@ -109,9 +106,6 @@ while True:
                         Y = ((y1 + y - cy) * dist) / fy
                         Z = np.sqrt(dist ** 2 - X ** 2 - Y ** 2)
                         points.append([X, Y, Z])
-                        distance_data.append([x, y, isolated_depth_frame[y, x]])
-                distance_data = np.array(distance_data)
-                # print(f"Distance Data: {distance_data}")
 
                 points = np.array(points)
 
