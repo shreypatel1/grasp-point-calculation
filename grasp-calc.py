@@ -20,16 +20,10 @@ args = ap.parse_args()
 model = YOLO(args.weights)
 
 # Testing purposes: Initialize the video stream and FPS counter
-# vs = VideoStream(sec=args.source).start()
 fps = FPS().start()
 
 # Initialize the RealSense camera
 rs_cam = RealSenseCamera()
-
-pc = rs.pointcloud()
-
-x_scale = 1280 / 640
-y_scale = 720 / 384
 
 color_intrinsics = rs_cam.get_color_intrinsics()
 # [ 1280x720  p[654.9 363.624]  f[643.633 643.024]  Inverse Brown Conrady [-0.0544022 0.0635166 -0.000826826 0.000847402 -0.0205106] ]
@@ -40,8 +34,8 @@ k1, k2, p1, p2, k3 = color_intrinsics.coeffs
 depth_intrinsics, depth_scale = rs_cam.get_depth_intrinsics()
 extrinsics = rs_cam.get_extrinsics()
 tx, ty, tz = extrinsics.translation
-px_offset = int((tx * fx)) - 4
-py_offset = int((ty * fy)) + 7
+px_offset = int((tx * fx)) - 6
+py_offset = int((ty * fy)) + 3
 print(f"px_offset: {px_offset}, py_offset: {py_offset}")
 
 # print(f"Color Intrinsics: {color_intrinsics}")
@@ -109,58 +103,55 @@ while True:
 
                 points = np.array(points)
 
-                distance_threshold = 0.02
-                ransac_n = 500  # Minimum number of points to fit a cylinder model
-                num_iterations = 1000  # Number of RANSAC iterations
-
                 # Create an Open3D point cloud object
                 point_cloud = o3d.geometry.PointCloud()
 
                 if len(points) > 0:
                     point_cloud.points = o3d.utility.Vector3dVector(points)
-                    point_cloud, ind = point_cloud.remove_statistical_outlier(nb_neighbors=60, std_ratio=3.0,
+                    point_cloud, ind = point_cloud.remove_statistical_outlier(nb_neighbors=120, std_ratio=3.0,
                                                                               print_progress=True)
                     # get the updated set of points as a numpy array
                     points = np.asarray(point_cloud.points)
 
-                    # mesh_cylinder = o3d.geometry.TriangleMesh.create_cylinder(radius=0.02, height=0.15)
-                    # mesh_cylinder.compute_vertex_normals()
-                    # mesh_cylinder.paint_uniform_color([0.1, 0.9, 0.1])
-                    # o3d.visualization.draw_geometries([mesh_cylinder])
-                    # pcd_load = mesh_cylinder.sample_points_uniformly(number_of_points=2000)
-                    # o3d.visualization.draw_geometries([pcd_load])
 
-                    cylinder1 = pyrsc.Cylinder()
-                    ctr, axs, r, inliners = cylinder1.fit(points, distance_threshold, num_iterations)
-                    ctr = np.float32(ctr)
-                    axs = np.float32(axs)
-                    r = np.float32(r)
-                    print(f"Center: {ctr}")
-                    print(f"Axis: {axs}")
-                    print(f"Radius: {r}")
-                    print(f"Number of inliners: {len(inliners)}")
+                    # RANSAC Cylinder Fitting
+                    distance_threshold = 0.005
+                    ransac_n = 500  # Minimum number of points to fit a cylinder model
+                    num_iterations = 100000  # Number of RANSAC iterations
 
-                    # # Returns:
-                    # # center: Center of the cylinder np.array(1, 3) which the cylinder axis is passing through.
-                    # # axis: Vector describing cylinder 's axis np.array(1,3).
-                    # # radius: Radius of cylinder.
-                    # # inliers: Inlier's index from the original point cloud.
+                    # Define cylinder model by manually estimating it, if needed
+                    cylinder_model, inliers = point_cloud.segment_plane(distance_threshold=distance_threshold,
+                                                                        ransac_n=ransac_n,
+                                                                        num_iterations=num_iterations)
+
+                    # Extract inlier points
+                    inlier_cloud = point_cloud.select_by_index(inliers)
+                    outlier_cloud = point_cloud.select_by_index(inliers, invert=True)
+
+                    # inliner_cloud = o3d.geometry.PointCloud()
+                    # inliner_cloud.points = o3d.utility.Vector3dVector(points[inliners])
 
                     # Create a cylinder object
-                    cylinder_mesh = o3d.geometry.TriangleMesh.create_cylinder(radius=r, height=0.1)
-                    cylinder_mesh.compute_vertex_normals()
+                    # cylinder_mesh = o3d.geometry.TriangleMesh.create_cylinder(radius=r, height=0.15)
+                    # cylinder_mesh.compute_vertex_normals()
                     # cylinder_object.paint_uniform_color([0.1, 0.1, 0.7])
-                    print(cylinder_mesh)
 
                     # Translate the cylinder to the center of the cylinder
-                    print(o3d.geometry.TriangleMesh.translate(cylinder_mesh, [ctr[0], ctr[1], ctr[2]]))
-                    # cylinder_mesh.translate([ctr[0], 0, 0])
+                    # cylinder_mesh.translate(ctr)
 
                     # Rotate the cylinder to align with the axis of the cylinder
-                    # cylinder_object.rotate(o3d.geometry.get_rotation_matrix_from_xyz(axs), center=ctr)
+                    # cylinder_mesh.rotate(o3d.geometry.get_rotation_matrix_from_xyz(axs), center=ctr)
 
                     # Display everything
-                    o3d.visualization.draw_geometries([point_cloud, cylinder_mesh])
+                    o3d.visualization.draw_geometries([point_cloud])
+                    o3d.visualization.draw_geometries([outlier_cloud])
+                    o3d.visualization.draw_geometries([inlier_cloud])
+                    # o3d.visualization.draw_geometries([cylinder_model])
+
+                    # display a plane in open3d with a, b, c, d values
+                    a, b, c, d = cylinder_model
+                    plane = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1, origin=[0, 0, 0])
+
 
                     # vis = o3d.visualization.Visualizer()
                     # vis.create_window()
