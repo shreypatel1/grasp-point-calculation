@@ -108,7 +108,7 @@ while True:
 
                 if len(points) > 0:
                     point_cloud.points = o3d.utility.Vector3dVector(points)
-                    point_cloud, ind = point_cloud.remove_statistical_outlier(nb_neighbors=120, std_ratio=3.0,
+                    point_cloud, ind = point_cloud.remove_statistical_outlier(nb_neighbors=120, std_ratio=0.5,
                                                                               print_progress=True)
                     # get the updated set of points as a numpy array
                     points = np.asarray(point_cloud.points)
@@ -118,15 +118,6 @@ while True:
                     distance_threshold = 0.01
                     ransac_n = 500  # Minimum number of points to fit a cylinder model
                     num_iterations = 1000  # Number of RANSAC iterations
-
-                    # Define cylinder model by manually estimating it, if needed
-                    cylinder_model, inliers = point_cloud.segment_plane(distance_threshold=distance_threshold,
-                                                                        ransac_n=ransac_n,
-                                                                        num_iterations=num_iterations)
-
-                    # Extract inlier points
-                    inlier_cloud = point_cloud.select_by_index(inliers)
-                    outlier_cloud = point_cloud.select_by_index(inliers, invert=True)
 
                     # Create a cylinder object
                     # cylinder_mesh = o3d.geometry.TriangleMesh.create_cylinder(radius=r, height=0.15)
@@ -141,22 +132,18 @@ while True:
 
                     # Display everything
                     o3d.visualization.draw_geometries([point_cloud])
-                    o3d.visualization.draw_geometries([outlier_cloud])
+                    # o3d.visualization.draw_geometries([outlier_cloud])
                     o3d.visualization.draw_geometries([inlier_cloud])
 
-                    # save point cloud and inliers in a txt file
-                    all_points = np.asarray(point_cloud.points)
-                    inlier_points = np.asarray(inlier_cloud.points)
+                    # # save point cloud and inliers in a txt file
+                    # all_points = np.asarray(point_cloud.points)
+                    # inlier_points = np.asarray(inlier_cloud.points)
+                    #
+                    # # Save inliers to a text file
+                    # np.savetxt('all_points.txt', all_points, fmt='%.8f', delimiter=',')
+                    # np.savetxt('inliers.txt', inlier_points, fmt='%.8f', delimiter=',')
 
-                    # Save inliers to a text file
-                    np.savetxt('all_points.txt', all_points, fmt='%.8f', delimiter=',')
-                    np.savetxt('inliers.txt', inlier_points, fmt='%.8f', delimiter=',')
-
-                    # vis = o3d.visualization.Visualizer()
-                    # vis.create_window()
-                    # vis.add_geometry(point_cloud)
-                    # vis.run()
-                    # vis.destroy_window()
+                    # Cylindrical
 
                 print(f"Total points extracted: {len(points)}")
                 if len(points) > 0:
