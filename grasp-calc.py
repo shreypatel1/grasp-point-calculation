@@ -4,10 +4,10 @@ from ultralytics import YOLO
 import cv2
 import numpy as np
 from imutils.video import FPS
+
+import math_models
 from realsense import RealSenseCamera
-import pyrealsense2 as rs
 import open3d as o3d
-import pyransac3d as pyrsc
 
 # Construct an argument parser and parse the arguments
 ap = argparse.ArgumentParser()
@@ -29,7 +29,6 @@ color_intrinsics = rs_cam.get_color_intrinsics()
 # [ 1280x720  p[654.9 363.624]  f[643.633 643.024]  Inverse Brown Conrady [-0.0544022 0.0635166 -0.000826826 0.000847402 -0.0205106] ]
 fx, fy = color_intrinsics.fx, color_intrinsics.fy
 cx, cy = color_intrinsics.ppx, color_intrinsics.ppy
-k1, k2, p1, p2, k3 = color_intrinsics.coeffs
 
 depth_intrinsics, depth_scale = rs_cam.get_depth_intrinsics()
 extrinsics = rs_cam.get_extrinsics()
@@ -42,13 +41,10 @@ print(f"px_offset: {px_offset}, py_offset: {py_offset}")
 # print(f"Depth Intrinsics: {depth_intrinsics}")
 # print(f"Extrinsics: {extrinsics}")
 
-# Camera matrix
-camera_matrix = np.array([[fx, 0, cx],
-                          [0, fy, cy],
-                          [0, 0, 1]], dtype=np.float32)
-
-# Distortion coefficients
-dist_coeffs = np.array([k1, k2, p1, p2, k3], dtype=np.float32)
+# Camera matrix and distortion coefficients
+cam_intr = math_models.CameraIntrinsics(fx, fy, cx, cy, color_intrinsics.coeffs)
+camera_matrix = cam_intr.get_camera_matrix()
+dist_coeffs = cam_intr.get_distortion_coeffs()
 
 # Loop over the frames from the video stream
 while True:
@@ -119,6 +115,9 @@ while True:
                     ransac_n = 500  # Minimum number of points to fit a cylinder model
                     num_iterations = 1000  # Number of RANSAC iterations
 
+                    # Get normal vectors of planes with RANSAC-based computation
+                    #
+
                     # Create a cylinder object
                     # cylinder_mesh = o3d.geometry.TriangleMesh.create_cylinder(radius=r, height=0.15)
                     # cylinder_mesh.compute_vertex_normals()
@@ -132,18 +131,9 @@ while True:
 
                     # Display everything
                     o3d.visualization.draw_geometries([point_cloud])
-                    # o3d.visualization.draw_geometries([outlier_cloud])
-                    o3d.visualization.draw_geometries([inlier_cloud])
 
-                    # # save point cloud and inliers in a txt file
-                    # all_points = np.asarray(point_cloud.points)
-                    # inlier_points = np.asarray(inlier_cloud.points)
-                    #
                     # # Save inliers to a text file
-                    # np.savetxt('all_points.txt', all_points, fmt='%.8f', delimiter=',')
-                    # np.savetxt('inliers.txt', inlier_points, fmt='%.8f', delimiter=',')
-
-                    # Cylindrical
+                    # np.savetxt('all_points.txt', points, fmt='%.8f', delimiter=',')
 
                 print(f"Total points extracted: {len(points)}")
                 if len(points) > 0:
