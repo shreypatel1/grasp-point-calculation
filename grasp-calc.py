@@ -184,7 +184,7 @@ while True:
                     lineset_lines = np.array([[0, 1]], dtype=np.int32)  # Only one line segment
 
                     print(f"Axis: {axis}")
-                    print(f"Axis Point: {axis_point}")
+                    # print(f"Axis Point: {axis_point}")
 
                     line_set = o3d.geometry.LineSet()
                     line_set.points = o3d.utility.Vector3dVector(line_pts)
@@ -194,23 +194,23 @@ while True:
                     projection, basis_x, basis_y = mmdl.project_points_to_plane(points, axis_point, axis)
 
                     # Estimate the circle center and radius
-                    circle_center, circle_radius = mmdl.estimate_circle_center_radius(projection, basis_x, basis_y, axis_point)
+                    cylinder_center, cylinder_radius = mmdl.estimate_circle_center_radius(projection, basis_x, basis_y, axis_point)
 
-                    print(f"Circle Center: {circle_center}")
-                    print(f"Circle Radius: {circle_radius}")
+                    print(f"Cylinder Center: {cylinder_center}")
+                    print(f"Cylinder Radius: {cylinder_radius}")
 
                     # Create a cylinder object
-                    cylinder_mesh = o3d.geometry.TriangleMesh.create_cylinder(radius=circle_radius, height=0.15)
-                    cylinder_mesh.compute_vertex_normals()
+                    cylinder_mesh = o3d.geometry.TriangleMesh.create_cylinder(radius=cylinder_radius, height=0.15)
                     # cylinder_mesh.paint_uniform_color([0.1, 0.1, 0.7])
 
-                    # # Translate the cylinder to the center of the cylinder
-                    # cylinder_mesh.translate(circle_center)
-                    #
-                    # # Rotate the cylinder to align with the axis of the cylinder
-                    # cylinder_mesh.rotate(o3d.geometry.get_rotation_matrix_from_xyz(axis), center=circle_center)
+                    # Translate the cylinder to the center of the cylinder
+                    # translated_mesh = cylinder_mesh.translate(cylinder_center, relative=False)
+
+                    # Rotate the cylinder to align with the axis of the cylinder
+                    # cylinder_mesh.rotate(o3d.geometry.get_rotation_matrix_from_xyz(axis), center=cylinder_center)
 
                     # Display everything
+                    cylinder_mesh.compute_vertex_normals()
                     o3d.visualization.draw_geometries([pcd, line_set, cylinder_mesh])
 
                     # # Save inliers to a text file

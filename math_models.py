@@ -78,4 +78,7 @@ class MathModels:
         # Convert the 2D center vector back to 3D space
         best_center = best_center[0] * basis_x + best_center[1] * basis_y + plane_point
 
+        best_center = best_center.astype(np.float64)
+        radius = radius.astype(np.float64)
+
         return best_center, radius
